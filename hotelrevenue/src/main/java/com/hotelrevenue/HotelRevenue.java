@@ -1,9 +1,10 @@
 package com.hotelrevenue;
 import java.io.IOException;
-import java.util.StringTokenizer;
+import java.io.StringReader;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -12,34 +13,43 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.log4j.BasicConfigurator;
+import com.opencsv.CSVReader;
 
 public class HotelRevenue {
 
   public static class TokenizerMapper
-       extends Mapper<Object, Text, Text, IntWritable>{
+       extends Mapper<Object, Text, Text, FloatWritable>{
 
-    private final static IntWritable one = new IntWritable(1);
-    private Text word = new Text();
+    private Text month = new Text();
+    private final static FloatWritable revenue = new FloatWritable();
 
     public void map(Object key, Text value, Context context
                     ) throws IOException, InterruptedException {
-      StringTokenizer itr = new StringTokenizer(value.toString());
-      while (itr.hasMoreTokens()) {
-        word.set(itr.nextToken());
-        context.write(word, one);
-      }
+      try {
+        CSVReader R = new CSVReader(new StringReader(value.toString()));
+        String[] ParsedLine = R.readNext();
+        int numDays = Integer.parseInt(ParsedLine[1]) + Integer.parseInt(ParsedLine[2]);
+        float revenuePerDay = Float.parseFloat(ParsedLine[8]);
+        float totalRevenue = numDays * revenuePerDay;
+        revenue.set(totalRevenue);
+        month.set(ParsedLine[5]);
+        R.close();
+        context.write(month, revenue);
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
     }
   }
 
-  public static class IntSumReducer
-       extends Reducer<Text,IntWritable,Text,IntWritable> {
-    private IntWritable result = new IntWritable();
+  public static class FloatSumReducer
+       extends Reducer<Text,FloatWritable,Text,FloatWritable> {
+    private FloatWritable result = new FloatWritable();
 
-    public void reduce(Text key, Iterable<IntWritable> values,
+    public void reduce(Text key, Iterable<FloatWritable> values,
                        Context context
                        ) throws IOException, InterruptedException {
-      int sum = 0;
-      for (IntWritable val : values) {
+      float sum = 0;
+      for (FloatWritable val : values) {
         sum += val.get();
       }
       result.set(sum);
@@ -50,13 +60,13 @@ public class HotelRevenue {
   public static void main(String[] args) throws Exception {
     BasicConfigurator.configure();
     Configuration conf = new Configuration();
-    Job job = Job.getInstance(conf, "word count");
+    Job job = Job.getInstance(conf, "hotel revenue");
     job.setJarByClass(HotelRevenue.class);
     job.setMapperClass(TokenizerMapper.class);
-    job.setCombinerClass(IntSumReducer.class);
-    job.setReducerClass(IntSumReducer.class);
+    job.setCombinerClass(FloatSumReducer.class);
+    job.setReducerClass(FloatSumReducer.class);
     job.setOutputKeyClass(Text.class);
-    job.setOutputValueClass(IntWritable.class);
+    job.setOutputValueClass(FloatWritable.class);
     FileInputFormat.addInputPath(job, new Path(args[0]));
     FileOutputFormat.setOutputPath(job, new Path(args[1]));
     System.exit(job.waitForCompletion(true) ? 0 : 1);
