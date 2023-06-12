@@ -1,3 +1,4 @@
+package com.hotelrevenue;
 import java.io.IOException;
 import java.util.StringTokenizer;
 
@@ -10,8 +11,9 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.log4j.BasicConfigurator;
 
-public class WordCount {
+public class HotelRevenue {
 
   public static class TokenizerMapper
        extends Mapper<Object, Text, Text, IntWritable>{
@@ -46,10 +48,10 @@ public class WordCount {
   }
 
   public static void main(String[] args) throws Exception {
+    BasicConfigurator.configure();
     Configuration conf = new Configuration();
     Job job = Job.getInstance(conf, "word count");
-    job.setJar("wc.jar");
-    job.setJarByClass(WordCount.class);
+    job.setJarByClass(HotelRevenue.class);
     job.setMapperClass(TokenizerMapper.class);
     job.setCombinerClass(IntSumReducer.class);
     job.setReducerClass(IntSumReducer.class);
