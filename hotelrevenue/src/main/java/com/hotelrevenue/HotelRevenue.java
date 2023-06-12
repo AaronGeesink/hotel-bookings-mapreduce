@@ -28,13 +28,29 @@ public class HotelRevenue {
       try {
         CSVReader R = new CSVReader(new StringReader(value.toString()));
         String[] ParsedLine = R.readNext();
-        int numDays = Integer.parseInt(ParsedLine[1]) + Integer.parseInt(ParsedLine[2]);
-        float revenuePerDay = Float.parseFloat(ParsedLine[8]);
-        float totalRevenue = numDays * revenuePerDay;
-        revenue.set(totalRevenue);
-        month.set(ParsedLine[5]);
+
+        //customer-reservations.csv
+        //System.out.print(ParsedLine[9].toString());
+        if(ParsedLine[9].equals("Canceled") || ParsedLine[9].equals("Not_Canceled")) {
+          //System.out.print("customer-reservations.csv");
+          int numDays = Integer.parseInt(ParsedLine[1]) + Integer.parseInt(ParsedLine[2]);
+          float revenuePerDay = Float.parseFloat(ParsedLine[8]);
+          float totalRevenue = numDays * revenuePerDay;
+          revenue.set(totalRevenue);
+          month.set(ParsedLine[5]);
+          context.write(month, revenue);
+        }
+        else { // hotel-booking.csv
+          //System.out.print("hotel-booking.csv");
+          int numDays = Integer.parseInt(ParsedLine[7]) + Integer.parseInt(ParsedLine[8]);
+          float revenuePerDay = Float.parseFloat(ParsedLine[11]);
+          float totalRevenue = numDays * revenuePerDay;
+          revenue.set(totalRevenue);
+          month.set(ParsedLine[4]);
+          context.write(month, revenue);
+        }
+        
         R.close();
-        context.write(month, revenue);
         } catch (Exception e) {
           e.printStackTrace();
         }
