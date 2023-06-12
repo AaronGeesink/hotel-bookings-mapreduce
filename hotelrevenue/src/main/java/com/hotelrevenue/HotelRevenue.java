@@ -1,11 +1,11 @@
 package com.hotelrevenue;
 import java.io.IOException;
 import java.io.StringReader;
+import java.text.DateFormatSymbols;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.FloatWritable;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -20,7 +20,7 @@ public class HotelRevenue {
   public static class TokenizerMapper
        extends Mapper<Object, Text, Text, FloatWritable>{
 
-    private Text month = new Text();
+    private Text yearMonthPair = new Text();
     private final static FloatWritable revenue = new FloatWritable();
 
     public void map(Object key, Text value, Context context
@@ -36,18 +36,26 @@ public class HotelRevenue {
           int numDays = Integer.parseInt(ParsedLine[1]) + Integer.parseInt(ParsedLine[2]);
           float revenuePerDay = Float.parseFloat(ParsedLine[8]);
           float totalRevenue = numDays * revenuePerDay;
+
+          String month = new DateFormatSymbols().getMonths()[Integer.parseInt(ParsedLine[5])-1];
+          String year = ParsedLine[4];
+
           revenue.set(totalRevenue);
-          month.set(ParsedLine[5]);
-          context.write(month, revenue);
+          yearMonthPair.set(year + "-" + month);
+          context.write(yearMonthPair, revenue);
         }
         else { // hotel-booking.csv
           //System.out.print("hotel-booking.csv");
           int numDays = Integer.parseInt(ParsedLine[7]) + Integer.parseInt(ParsedLine[8]);
           float revenuePerDay = Float.parseFloat(ParsedLine[11]);
           float totalRevenue = numDays * revenuePerDay;
+
+          String month = ParsedLine[4];
+          String year = ParsedLine[3];
+
           revenue.set(totalRevenue);
-          month.set(ParsedLine[4]);
-          context.write(month, revenue);
+          yearMonthPair.set(year + "-" + month);
+          context.write(yearMonthPair, revenue);
         }
         
         R.close();
