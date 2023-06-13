@@ -6,7 +6,12 @@ public class HotelRevenue {
     boolean success = CalcRevenue.calcRevenue(args);
     if(success) {
       System.out.println("Job 1 Success");
-      SortRevenue.sortRevenue("output", "output2");
+      success = SortRevenue.sortRevenue("output", "output2");
     }
+    if (success) {
+      System.out.println("Job 2 Success");
+      success = YearRevenue.calcYearRevenue("output", "output3");
+    }
+      System.out.println(success);
   }
 }
